@@ -1,3 +1,4 @@
-[submodule "src/c-periphery"]
-	path = src/c-periphery
-	url = git://github.com/vsergeev/c-periphery
+[submodule "libperiphery"]
+	path = periphery-sys/src/c-periphery
+	url = https://github.com/vsergeev/c-periphery.git
+	branch = tags/v2.0.1

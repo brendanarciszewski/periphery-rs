@@ -1,0 +1,14 @@
+[package]
+name = "periphery-sys"
+version = "0.1.0"
+authors = ["Brendan Arciszewski <git@brendanarciszewski.ca>"]
+edition = "2018"
+links = "periphery"
+build = "build.rs"
+
+[build-dependencies]
+cc = "^1.0"
+make-cmd = "^0.1.0"
+bindgen = "^0.51.1"
+
+[dependencies]
