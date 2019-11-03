@@ -1,0 +1,11 @@
+[package]
+name = "rust-periphery"
+version = "0.1.0"
+authors = ["Brendan Arciszewski <git@brendanarciszewski.ca>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+periphery-sys = {path = "../periphery-sys"}
+thiserror = "^1.0"
