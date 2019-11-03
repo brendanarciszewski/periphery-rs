@@ -14,21 +14,21 @@ use thiserror::Error;
 pub struct Spi(*mut spi_t);
 
 impl Spi {
-    fn check_result(&self, result: i32) -> Result<(), SpiError> {
+    fn check_result(&mut self, result: i32) -> Option<SpiError> {
         match result {
-            0 => Ok(()),
+            0 => None,
             res => {
                 let res_str: String = unsafe { CStr::from_ptr(spi_errmsg(self.0)) }
                     .to_string_lossy()
                     .to_string();
                 match res {
-                    spi_error_code_SPI_ERROR_ARG => Err(SpiError::Arg(res_str)),
-                    spi_error_code_SPI_ERROR_OPEN => Err(SpiError::Open(res_str)),
-                    spi_error_code_SPI_ERROR_QUERY => Err(SpiError::Query(res_str)),
-                    spi_error_code_SPI_ERROR_CONFIGURE => Err(SpiError::Configure(res_str)),
-                    spi_error_code_SPI_ERROR_TRANSFER => Err(SpiError::Transfer(res_str)),
-                    spi_error_code_SPI_ERROR_CLOSE => Err(SpiError::Close(res_str)),
-                    res => Err(SpiError::OutOfRange(res)),
+                    spi_error_code_SPI_ERROR_ARG => Some(SpiError::Arg(res_str)),
+                    spi_error_code_SPI_ERROR_OPEN => Some(SpiError::Open(res_str)),
+                    spi_error_code_SPI_ERROR_QUERY => Some(SpiError::Query(res_str)),
+                    spi_error_code_SPI_ERROR_CONFIGURE => Some(SpiError::Configure(res_str)),
+                    spi_error_code_SPI_ERROR_TRANSFER => Some(SpiError::Transfer(res_str)),
+                    spi_error_code_SPI_ERROR_CLOSE => Some(SpiError::Close(res_str)),
+                    res => Some(SpiError::OutOfRange(res)),
                 }
             }
         }
@@ -54,10 +54,10 @@ impl Spi {
         if spi as usize == 0 {
             return Err(SpiError::AllocationFailed);
         }
-        let spi = Spi { 0: spi };
-        let path = CString::new(path).unwrap();
-        match spi.check_result(unsafe {
-            spi_open_advanced(
+        unsafe {
+            let mut spi = Spi { 0: spi };
+            let path = CString::new(path).unwrap();
+            match spi.check_result(spi_open_advanced(
                 spi.0,
                 path.as_ptr(),
                 mode,
@@ -65,10 +65,26 @@ impl Spi {
                 bit_order as spi_bit_order_t,
                 bits_per_word,
                 extra_flags,
-            )
-        }) {
-            Ok(_) => Ok(spi),
-            Err(err) => Err(err),
+            )) {
+                None => Ok(spi),
+                Some(err) => Err(err),
+            }
+        }
+    }
+
+    pub fn transfer(&mut self, data: &[u8]) -> Result<Vec<u8>, SpiError> {
+        let len = data.len();
+        unsafe {
+            let mut out = Vec::with_capacity(len);
+            match self.check_result(spi_transfer(
+                self.0,
+                data.as_ptr(),
+                (&mut out[..]).as_mut_ptr(),
+                len,
+            )) {
+                Some(result) => Err(result),
+                None => Ok(out),
+            }
         }
     }
 }
@@ -76,8 +92,8 @@ impl Spi {
 impl core::ops::Drop for Spi {
     fn drop(&mut self) {
         match self.check_result(unsafe { spi_close(self.0) }) {
-            Err(SpiError::Close(_)) => { /*Don't do anything for now*/ }
-            Err(_) => {}
+            Some(SpiError::Close(_)) => { /*Don't do anything for now*/ }
+            Some(_) => {}
             _ => {}
         };
         unsafe { spi_free(self.0) }
