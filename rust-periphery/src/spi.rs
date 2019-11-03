@@ -1,4 +1,3 @@
-use core::convert::{TryFrom, TryInto};
 use periphery_sys::{
     spi_bit_order_LSB_FIRST, spi_bit_order_MSB_FIRST, spi_bit_order_t, spi_close, spi_errmsg,
     spi_error_code_SPI_ERROR_ARG, spi_error_code_SPI_ERROR_CLOSE,
@@ -112,4 +111,16 @@ pub enum SpiError {
     OutOfRange(i32),
     #[error("another error occurred")]
     Unknown,
+}
+
+#[cfg(test)]
+#[cfg(target_os = "linux")]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn create_device() {
+        let err = Spi::try_new("/dev/spidev0.0", 0, 1000).err();
+        assert!(err.is_some());
+    }
 }

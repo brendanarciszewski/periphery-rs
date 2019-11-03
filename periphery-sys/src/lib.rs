@@ -598,7 +598,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
+    fn function_available() {
         unsafe {
             spi_new();
         }
