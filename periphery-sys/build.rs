@@ -5,7 +5,11 @@ use std::env;
 use std::path::PathBuf;
 use std::process::exit;
 
-fn main() {
+#[cfg(not(target_os = "linux"))]
+fn run_build() {}
+
+#[cfg(target_os = "linux")]
+fn run_build() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let mut command = make();
     command.arg(format!("OBJDIR={}", out_dir.to_str().unwrap()));
@@ -56,4 +60,8 @@ fn main() {
         "cargo:rustc-link-search=native={}",
         out_dir.to_str().unwrap()
     );
+}
+
+fn main() {
+    run_build()
 }
